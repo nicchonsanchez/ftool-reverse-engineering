@@ -146,11 +146,10 @@ Pos | Linha exemplo                                | Conteúdo
 10  | "0" ou ID                                    | ID da CARGA UNIFORME aplicada (0 = nenhuma)
 11  | "0" ou ID                                    | **ID da CARGA LINEAR aplicada** (0 = nenhuma) — validado exp-H
 12  | "0" ou ID                                    | **ID do THERMAL LOAD aplicado** (0 = nenhuma) — validado exp-J
-13  | "[res] X_state Y_state Z_state +float"       | **APOIO no endpoint Mb (coord)**. States: 0=free, 1=fix, 2=spring (validado exp-T)
-14  | "Kx Ky Kz"                                   | **Rigidezes das molas elásticas** (kN/m, kN/m, kNm/rad)
-    |                                              | Só não-zero se respectivo state da linha 13 = 2
-15  | "0" ou ID                                    | ID da CARGA NODAL no endpoint A (0 = nenhuma)
-16  | "0 0 0 0"                                    |
+13  | "[res] X_state Y_state Z_state +0"           | **APOIO no endpoint Mb (coord)**. States: 0=free, 1=fix, 2=spring (validado exp-T). 5º float sempre 0.
+14  | "Kx Ky Kz"                                   | **Rigidezes das molas elásticas** (kN/m, kN/m, kNm/rad). Só não-zero se respectivo state = 2
+15  | "0" ou ID                                    | NODAL LOAD ID no endpoint Mb (0 = nenhuma)
+16  | "[flag] Dx Dy Rz"                            | **RECALQUE PRESCRITO** (validado exp-U). flag=1 se tem recalque, Dx Dy em METROS, Rz em RAD. Ex: `1 0 -0.01 0` = Dy=-10mm
 ```
 
 ### Bloco `4 1 ...` — Connector (12 linhas)

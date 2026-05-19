@@ -145,11 +145,10 @@ Pos | Example line                                 | Content
 10  | "0" or ID                                    | UNIFORM LOAD ID applied (0 = none)
 11  | "0" or ID                                    | **LINEAR LOAD ID applied** (0 = none) — validated exp-H
 12  | "0" or ID                                    | **THERMAL LOAD ID applied** (0 = none) — validated exp-J
-13  | "[res] X_state Y_state Z_state +float"       | **SUPPORT at endpoint Mb (coord)**. States: 0=free, 1=fix, 2=spring (validated exp-T)
-14  | "Kx Ky Kz"                                   | **Elastic spring stiffnesses** (kN/m, kN/m, kNm/rad)
-    |                                              | Non-zero only if respective state in line 13 = 2
-15  | "0" or ID                                    | NODAL LOAD ID at endpoint A
-16  | "0 0 0 0"                                    |
+13  | "[res] X_state Y_state Z_state +0"           | **SUPPORT at endpoint Mb (coord)**. States: 0=free, 1=fix, 2=spring (validated exp-T). 5th float always 0.
+14  | "Kx Ky Kz"                                   | **Elastic spring stiffnesses** (kN/m, kN/m, kNm/rad). Non-zero only if respective state = 2
+15  | "0" or ID                                    | NODAL LOAD ID at endpoint Mb
+16  | "[flag] Dx Dy Rz"                            | **PRESCRIBED DISPLACEMENT** (validated exp-U). flag=1 if prescribed, Dx Dy in METERS, Rz in RAD. Ex: `1 0 -0.01 0` = Dy=-10mm
 ```
 
 ### `4 1 ...` block — Connector (12 lines)
