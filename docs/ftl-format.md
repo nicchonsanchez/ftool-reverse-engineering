@@ -69,6 +69,30 @@ Próxima: [count_linear]
 Linhas: "[flag] 'nome' Pxi Pyi Pxj Pyj"                  # 6 valores (validado exp-H)
         Ex: "0 'Trapezoidal' 0 0 0 -5" = ramp de 0 a -5 kN/m
 Linhas seguintes: "0" "0" "0"... (slots pra Member End Moments, Thermal, etc.)
+
+**Load Trains** (cargas móveis pra análise de pontes) vêm DEPOIS de todos os tipos de carga estática, numa seção complexa:
+
+```
+[count_trains]
+'nome_train'
+[?]
+[length_m]
+[x1 P1]                ← cada carga concentrada do trem: posição e força (kN)
+[x2 P2]
+...
+[count_distributed]    ← se = 0, ainda usa 1 linha
+[count_live]
+[?]
+[?]
+[?]
+[impact_factor]
+[?]
+```
+
+Validado parcialmente em exp-X (não 100% decifrado pelo nível de complexidade). Validado:
+- Load Trains NÃO têm slot por barra — são globais ao modelo
+- A seção fica entre cargas estáticas e stub da origem
+- Contadores na linha 4 não mudam (load train não conta como "entidade")
 ```
 
 ## Materiais (linhas 26-28)

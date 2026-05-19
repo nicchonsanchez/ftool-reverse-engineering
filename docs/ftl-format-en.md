@@ -69,6 +69,30 @@ Next: [count_linear_loads]
 Lines: "[flag] 'name' Pxi Pyi Pxj Pyj"                  # 6 values (validated exp-H)
         Ex: "0 'Trapezoidal' 0 0 0 -5" = ramp 0 to -5 kN/m
 Lines after: "0" "0" "0"... (slots for Member End Moments, Thermal, etc.)
+
+**Load Trains** (moving loads for bridge analysis) come AFTER all static load types, in a complex section:
+
+```
+[count_trains]
+'train_name'
+[?]
+[length_m]
+[x1 P1]                ← each concentrated load in the train: position and force (kN)
+[x2 P2]
+...
+[count_distributed]    ← if = 0, still uses 1 line
+[count_live]
+[?]
+[?]
+[?]
+[impact_factor]
+[?]
+```
+
+Partially validated in exp-X (not 100% decoded due to complexity). Validated:
+- Load Trains have NO per-bar slot — they are global to the model
+- The section sits between static loads and origin stub
+- Line 4 counters do NOT change (load train doesn't count as "entity")
 ```
 
 ## Materials (lines 26-28)
