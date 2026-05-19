@@ -138,7 +138,7 @@ Pos | Example line                                 | Content
 04  | "0"                                          | constant
 05  | "+xmin +xmax +ymin +ymax"                    | bbox enveloping BOTH endpoints
     |                                              | Other endpoint = opposite bbox corner
-06  | "[res] [hingeA] [hingeB] 0 0 1"              | flags incl. HINGES (see table below)
+06  | "[res] [hingeMa] [hingeMb] [no_axial] [no_shear] 1" | flags incl. hinges + rigid (6 values)
 07  | "0" or ID                                    | MATERIAL ID applied (0 = none)
 08  | "0" or ID                                    | SECTION ID applied (0 = none)
 09  | "0" or ID                                    | **MEMBER END MOMENT ID applied** (0 = none) — validated exp-I
@@ -198,10 +198,13 @@ Position 6 of `2 1 ...` block (flags line, 6 values):
 | Pos | Meaning |
 |-----|---------|
 | 1 | Result flag (becomes `1` after Solve) |
-| **2** | **Hinge at INITIAL node (Ma)** = endpoint OPPOSITE to block's coord: 0 = rigid, 1 = released |
-| **3** | **Hinge at END node (Mb)** = endpoint AT block's coord: 0 = rigid, 1 = released |
-| 4-5 | Additional releases (axial/shear, rarely used) |
+| **2** | **Hinge at INITIAL node (Ma)** = endpoint OPPOSITE to coord: 0 = rigid, 1 = released |
+| **3** | **Hinge at END node (Mb)** = endpoint AT coord: 0 = rigid, 1 = released |
+| **4** | **Ignore AXIAL deformation** (Rigid axial): 0 = consider, 1 = ignore — validated exp-V |
+| **5** | **Ignore SHEAR deformation** (Rigid shear): 0 = consider, 1 = ignore — validated exp-V |
 | 6 | Constant `1` |
+
+"Rigid Member" in Deformation Constraints panel = both pos 4 and pos 5 set to 1.
 
 ⚠️ **Important**: the `coord` stored in pos 3 of the block is the **end node (Mb)**, NOT the initial node (Ma). Ma is the bbox-opposite corner. Order is defined by click order when creating the bar (first click = Ma, second click = Mb = coord).
 

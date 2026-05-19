@@ -139,7 +139,7 @@ Pos | Linha exemplo                                | Conteúdo
 04  | "0"                                          | constante
 05  | "+xmin +xmax +ymin +ymax"                    | bbox que envelopa AMBAS pontas
     |                                              | A outra ponta = canto do bbox oposto à coord
-06  | "[res] [hingeA] [hingeB] 0 0 1"              | flags incl. RÓTULAS (ver tabela abaixo)
+06  | "[res] [hingeMa] [hingeMb] [no_axial] [no_shear] 1" | flags incl. rótulas + rigid (6 valores)
 07  | "0" ou ID                                    | ID do MATERIAL aplicado (0 = nenhuma)
 08  | "0" ou ID                                    | ID da SEÇÃO aplicada (0 = nenhuma)
 09  | "0" ou ID                                    | **ID do MEMBER END MOMENT aplicado** (0 = nenhuma) — validado exp-I
@@ -199,10 +199,13 @@ Posição 6 do bloco `2 1 ...` (linha de flags, 6 valores):
 | Pos | Significado |
 |-----|-------------|
 | 1 | Result flag (vira `1` após Solve) |
-| **2** | **Rótula no nó INICIAL (Ma)** = endpoint OPOSTO ao coord do bloco: 0 = rígido, 1 = articulado |
-| **3** | **Rótula no nó FINAL (Mb)** = endpoint AT coord do bloco: 0 = rígido, 1 = articulado |
-| 4-5 | Releases adicionais (axial/shear, raramente usado) |
+| **2** | **Rótula no nó INICIAL (Ma)** = endpoint OPOSTO ao coord: 0 = rígido, 1 = articulado |
+| **3** | **Rótula no nó FINAL (Mb)** = endpoint AT coord: 0 = rígido, 1 = articulado |
+| **4** | **Ignora deformação AXIAL** (Rigid axial): 0 = considera, 1 = ignora — validado exp-V |
+| **5** | **Ignora deformação CISALHANTE** (Rigid shear): 0 = considera, 1 = ignora — validado exp-V |
 | 6 | Constante `1` |
+
+"Rigid Member" no painel Deformation Constraints = pos 4 + pos 5 ambos = 1 simultaneamente.
 
 ⚠️ **Importante**: o `coord` armazenado na pos 3 do bloco é o **end node (Mb)**, NÃO o initial node (Ma). O Ma é o canto bbox-oposto ao coord. A ordem é definida pela ordem de clique ao criar a barra (primeiro clique = Ma, segundo clique = Mb = coord).
 
