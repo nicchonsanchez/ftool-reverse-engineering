@@ -258,6 +258,25 @@ These are **internal indices** — not result data. Can be zeroed to force recom
 7. Update counters (line 4): pos 6 and 7 = max created IDs
 8. Final line: ` 0` with leading space
 
+## Bar splitting — complex operation
+
+Inserting a node IN THE MIDDLE of an existing bar is NOT trivial. FTool transforms 1 bar into **~5 entities**:
+
+1. Left half (`2 1`, coord = split point)
+2. Right half (`2 1`, coord = original endpoint)
+3. Wrapper `4 1` with `±1e30 ±1e30 ±1e30 ±1e30` at pos 3 (ghost entity holding metadata)
+4. Marker `-1 1 ...` at the end
+5. (Possibly others)
+
+Distribution of original properties:
+- **Support + nodal load** (at original Mb endpoint) → right half
+- **MEM + Linear + Thermal loads** (full-bar distributed) → left half + wrapper
+- **Hinge at Mb** → wrapper
+
+⚠️ **For programmatic `.ftl` generation: avoid splitting.** Create bars at the final intended sizes from the start. Wrappers and markers add unnecessary complexity.
+
+Experimentally validated in exp-S-split-bar.
+
 ## Common errors
 
 - ❌ Creating isolated "node entities" — FTool discards. There's no standalone node entity.

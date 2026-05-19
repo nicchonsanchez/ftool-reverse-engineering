@@ -259,6 +259,25 @@ Esses são **índices internos** — não dados de resultado. Podem ser zerados 
 7. Atualizar contadores (linha 4): pos 6 e 7 = max ID criado
 8. Linha final: ` 0` com espaço inicial
 
+## Bar splitting — operação complexa
+
+Inserir um nó NO MEIO de uma barra existente NÃO é simples. O FTool transforma 1 barra em **~5 entidades**:
+
+1. Metade esquerda (`2 1`, coord = ponto do split)
+2. Metade direita (`2 1`, coord = endpoint original)
+3. Wrapper `4 1` com `±1e30 ±1e30 ±1e30 ±1e30` no pos 3 (ghost entity que mantém metadados)
+4. Marker `-1 1 ...` no fim
+5. (Possivelmente outras)
+
+Distribuição das propriedades originais:
+- **Apoio + nodal load** (no endpoint Mb original) → metade direita
+- **MEM + Linear + Thermal loads** (cargas em barra inteira) → metade esquerda + wrapper
+- **Hinge no Mb** → wrapper
+
+⚠️ **Pra gerar `.ftl` programaticamente: evite splitting.** Crie barras já no tamanho final desejado. Wrappers e markers adicionam complexidade não-necessária.
+
+Validado experimentalmente em exp-S-split-bar.
+
 ## Erros comuns
 
 - ❌ Criar "entidades nó" isoladas — FTool descarta. Não existe entidade nó solo.
