@@ -78,13 +78,15 @@ Pra cada trem:
   Linha: 'nome_train'                       # nome em linha separada
   Linha: [impact_factor]                    # fator de impacto (validado X1)
   Linha: [N = count_concentrated_loads]     # número de cargas concentradas
-  N linhas: "x  P"                          # matriz de cargas: posição[m] força[kN]
+  N linhas: "x  P"                          # matriz: posição[m] força[kN]
   Linha: [M = count_distributed_loads]      # número de cargas distribuídas
-  M linhas: "xa xb q [q']"                  # matriz distributed (4 cols se full/empty)
+  M linhas: "xa  xb  q'  q"                 # SEMPRE 4 valores (q'=q se single mode)
   Linha: [live_load_exterior]               # kN/m (validado X4)
   Linha: [live_load_interior]               # kN/m
   Linha: [length_m]                         # comprimento do trem (validado X2)
-  Linhas: 0 0 0                             # flags single/full-empty car, etc.
+  Linha: [full_empty_flag]                  # 0=single load car, 1=full/empty car (X6)
+  Linha: 0                                  # reservado (uso desconhecido)
+  Linha: 0                                  # reservado (uso desconhecido)
 ```
 
 Exemplo (Impact=3, Length=5, 3 cargas concentradas, Live Load Ext=-7):
