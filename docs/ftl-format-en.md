@@ -140,7 +140,7 @@ Pos | Example line                                 | Content
 09  | "0" or ID                                    | **MEMBER END MOMENT ID applied** (0 = none) — validated exp-I
 10  | "0" or ID                                    | UNIFORM LOAD ID applied (0 = none)
 11  | "0" or ID                                    | **LINEAR LOAD ID applied** (0 = none) — validated exp-H
-12  | "0"                                          | likely Thermal Load ID (not yet validated)
+12  | "0" or ID                                    | **THERMAL LOAD ID applied** (0 = none) — validated exp-J
 13  | "[result_ref] Fx Fy Mz +float"               | SUPPORT at endpoint A
 14  | "0 0 0"                                      |
 15  | "0" or ID                                    | NODAL LOAD ID at endpoint A

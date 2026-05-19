@@ -141,7 +141,7 @@ Pos | Linha exemplo                                | Conteúdo
 09  | "0" ou ID                                    | **ID do MEMBER END MOMENT aplicado** (0 = nenhuma) — validado exp-I
 10  | "0" ou ID                                    | ID da CARGA UNIFORME aplicada (0 = nenhuma)
 11  | "0" ou ID                                    | **ID da CARGA LINEAR aplicada** (0 = nenhuma) — validado exp-H
-12  | "0"                                          | provável: Thermal Load ID (não validado)
+12  | "0" ou ID                                    | **ID do THERMAL LOAD aplicado** (0 = nenhuma) — validado exp-J
 13  | "[result_ref] Fx Fy Mz +float"               | APOIO no endpoint A
 14  | "0 0 0"                                      |
 15  | "0" ou ID                                    | ID da CARGA NODAL no endpoint A (0 = nenhuma)
