@@ -70,28 +70,46 @@ Lines: "[flag] 'name' Pxi Pyi Pxj Pyj"                  # 6 values (validated ex
         Ex: "0 'Trapezoidal' 0 0 0 -5" = ramp 0 to -5 kN/m
 Lines after: "0" "0" "0"... (slots for Member End Moments, Thermal, etc.)
 
-**Load Trains** (moving loads for bridge analysis) come AFTER all static load types, in a complex section:
+**Load Trains** (moving loads for bridge analysis) come AFTER all static load types, in a complex section. Structure decoded (exp-X through X4):
 
 ```
-[count_trains]
-'train_name'
-[?]
-[length_m]
-[x1 P1]                ← each concentrated load in the train: position and force (kN)
-[x2 P2]
-...
-[count_distributed]    ← if = 0, still uses 1 line
-[count_live]
-[?]
-[?]
-[?]
-[impact_factor]
-[?]
+Line: [count_trains]                        # number of trains defined
+For each train:
+  Line: 'train_name'                        # name on its own line
+  Line: [impact_factor]                     # impact factor (validated X1)
+  Line: [N = count_concentrated_loads]      # number of concentrated loads
+  N lines: "x  P"                           # load matrix: position[m] force[kN]
+  Line: [M = count_distributed_loads]       # number of distributed loads
+  M lines: "xa xb q [q']"                   # distributed matrix (4 cols if full/empty)
+  Line: [live_load_exterior]                # kN/m (validated X4)
+  Line: [live_load_interior]                # kN/m
+  Line: [length_m]                          # train length (validated X2)
+  Lines: 0 0 0                              # flags (single/full-empty car, etc.)
 ```
 
-Partially validated in exp-X (not 100% decoded due to complexity). Validated:
+Example (Impact=3, Length=5, 3 concentrated loads, Live Load Ext=-7):
+```
+31: 1               # count trains
+32: 'TremTeste'
+33: 3               # impact factor
+34: 3               # 3 concentrated loads
+35: 0  -10
+36: 2  -10
+37: 4  -5
+38: 0               # 0 distributed loads
+39: -7              # Live Load Exterior
+40: 0               # Live Load Interior
+41: 5               # Length
+42: 0
+43: 0
+44: 0               # 3 trailing zeros (flags)
+```
+
+⚠️ **Sign convention**: FTool stores train loads as NEGATIVE (assumes gravity downward). If you enter 7 in Live Load Exterior, FTool saves -7 automatically.
+
+Validated via exp-X:
 - Load Trains have NO per-bar slot — they are global to the model
-- The section sits between static loads and origin stub
+- The section sits between static loads (Thermal) and origin stub
 - Line 4 counters do NOT change (load train doesn't count as "entity")
 ```
 

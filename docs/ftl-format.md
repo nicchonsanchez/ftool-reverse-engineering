@@ -70,28 +70,46 @@ Linhas: "[flag] 'nome' Pxi Pyi Pxj Pyj"                  # 6 valores (validado e
         Ex: "0 'Trapezoidal' 0 0 0 -5" = ramp de 0 a -5 kN/m
 Linhas seguintes: "0" "0" "0"... (slots pra Member End Moments, Thermal, etc.)
 
-**Load Trains** (cargas móveis pra análise de pontes) vêm DEPOIS de todos os tipos de carga estática, numa seção complexa:
+**Load Trains** (cargas móveis pra análise de pontes) vêm DEPOIS de todos os tipos de carga estática, numa seção complexa. Estrutura decodificada (exp-X a X4):
 
 ```
-[count_trains]
-'nome_train'
-[?]
-[length_m]
-[x1 P1]                ← cada carga concentrada do trem: posição e força (kN)
-[x2 P2]
-...
-[count_distributed]    ← se = 0, ainda usa 1 linha
-[count_live]
-[?]
-[?]
-[?]
-[impact_factor]
-[?]
+Linha: [count_trains]                       # número de trens definidos
+Pra cada trem:
+  Linha: 'nome_train'                       # nome em linha separada
+  Linha: [impact_factor]                    # fator de impacto (validado X1)
+  Linha: [N = count_concentrated_loads]     # número de cargas concentradas
+  N linhas: "x  P"                          # matriz de cargas: posição[m] força[kN]
+  Linha: [M = count_distributed_loads]      # número de cargas distribuídas
+  M linhas: "xa xb q [q']"                  # matriz distributed (4 cols se full/empty)
+  Linha: [live_load_exterior]               # kN/m (validado X4)
+  Linha: [live_load_interior]               # kN/m
+  Linha: [length_m]                         # comprimento do trem (validado X2)
+  Linhas: 0 0 0                             # flags single/full-empty car, etc.
 ```
 
-Validado parcialmente em exp-X (não 100% decifrado pelo nível de complexidade). Validado:
+Exemplo (Impact=3, Length=5, 3 cargas concentradas, Live Load Ext=-7):
+```
+31: 1               # count trains
+32: 'TremTeste'
+33: 3               # impact factor
+34: 3               # 3 concentrated loads
+35: 0  -10
+36: 2  -10
+37: 4  -5
+38: 0               # 0 distributed loads
+39: -7              # Live Load Exterior
+40: 0               # Live Load Interior
+41: 5               # Length
+42: 0
+43: 0
+44: 0               # 3 trailing zeros (flags)
+```
+
+⚠️ **Convenção de sinal**: FTool armazena cargas de trem como NEGATIVAS (assumindo gravidade pra baixo). Se você digitar 7 no campo Live Load Exterior, FTool salva -7 automaticamente.
+
+Pontos confirmados via exp-X:
 - Load Trains NÃO têm slot por barra — são globais ao modelo
-- A seção fica entre cargas estáticas e stub da origem
+- A seção fica entre cargas estáticas (Thermal) e stub da origem
 - Contadores na linha 4 não mudam (load train não conta como "entidade")
 ```
 
