@@ -49,6 +49,10 @@ Linha 17: "1"                                            # número de casos de c
 Linha 18: "'Load Case 01' 1"                             # 'nome' [flag]
 ```
 
+⚠️ **Limitação importante**: múltiplos load cases e combinações (Load Comb) são **exclusivos da Advanced Edition** do FTool. Na Standard Edition (que a maioria usa), só rola 1 load case. Os ícones de "Load Case" e "Load Comb" ficam desabilitados na UI. O dropdown no topo só funciona pra alternar entre cases pré-existentes em arquivos Advanced.
+
+Pra gerar `.ftl` com múltiplos cases programaticamente: linha 17 = N (número de cases), linhas 18..(17+N) = `'nome' flag` pra cada um. Mas o FTool Standard pode não conseguir abrir arquivos com N > 1 corretamente (não validado).
+
 ## Cargas (linhas 19-25)
 
 ```
