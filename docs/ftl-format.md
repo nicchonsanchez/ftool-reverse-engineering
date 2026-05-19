@@ -131,7 +131,7 @@ Pos | Linha exemplo                                | Conteúdo
 04  | "0"                                          | constante
 05  | "+xmin +xmax +ymin +ymax"                    | bbox que envelopa AMBAS pontas
     |                                              | A outra ponta = canto do bbox oposto à coord
-06  | "[result_flag] 0 0 0 0 1"                    | flags + result ref após análise
+06  | "[res] [hingeA] [hingeB] 0 0 1"              | flags incl. RÓTULAS (ver tabela abaixo)
 07  | "0" ou "1"                                   | = 1 se barra tem MATERIAL aplicado
 08  | "0" ou ID                                    | ID da SEÇÃO aplicada (0 = nenhuma)
 09  | "0"                                          | constante
@@ -183,6 +183,29 @@ A ordem de criação das barras define qual barra "possui" o slot de cada nó. P
 1. Defina a ordem de criação das barras
 2. O 1º endpoint que você cria vira endpoint A (slot owner) daquela barra
 3. Barras subsequentes que tocam esse nó usam bloco `4 1` (connector)
+
+## Encoding de rótulas (Rotation Release)
+
+Posição 6 do bloco `2 1 ...` (linha de flags, 6 valores):
+
+| Pos | Significado |
+|-----|-------------|
+| 1 | Result flag (vira `1` após Solve) |
+| **2** | **Rótula no endpoint A (coord do bloco)**: 0 = rígido, 1 = articulado |
+| 3 | Rótula no endpoint B (canto oposto do bbox): 0 = rígido, 1 = articulado |
+| 4-5 | Releases adicionais (axial/shear, raramente usado) |
+| 6 | Constante `1` |
+
+Adicionar rótula:
+- ❌ Não incrementa contadores da linha 4
+- ❌ Não muda o tamanho do bloco (continua 16 linhas)
+- ✅ Só toggla 1 bit na flags line
+
+Exemplo (validado experimentalmente):
+- Sem rótula: `0 0 0 0 0 1`
+- Rótula no início (endpoint A): `0 1 0 0 0 1`
+- Rótula no fim (endpoint B): `0 0 1 0 0 1` (esperado)
+- Rótula em ambos: `0 1 1 0 0 1` (esperado)
 
 ## Encoding de apoios
 

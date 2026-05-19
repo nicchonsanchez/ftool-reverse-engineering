@@ -130,7 +130,7 @@ Pos | Example line                                 | Content
 04  | "0"                                          | constant
 05  | "+xmin +xmax +ymin +ymax"                    | bbox enveloping BOTH endpoints
     |                                              | Other endpoint = opposite bbox corner
-06  | "[result_flag] 0 0 0 0 1"                    | flags + post-analysis result ref
+06  | "[res] [hingeA] [hingeB] 0 0 1"              | flags incl. HINGES (see table below)
 07  | "0" or "1"                                   | = 1 if MATERIAL applied
 08  | "0" or ID                                    | SECTION ID applied (0 = none)
 09  | "0"                                          | constant
@@ -182,6 +182,29 @@ Bar creation ORDER defines which bar "owns" each node's slot. Plan:
 1. Define bar creation order
 2. First endpoint you create becomes endpoint A (slot owner) of that bar
 3. Subsequent bars touching that node use `4 1` (connector) block
+
+## Hinge encoding (Rotation Release)
+
+Position 6 of `2 1 ...` block (flags line, 6 values):
+
+| Pos | Meaning |
+|-----|---------|
+| 1 | Result flag (becomes `1` after Solve) |
+| **2** | **Hinge at endpoint A (block's coord)**: 0 = rigid, 1 = released |
+| 3 | Hinge at endpoint B (opposite bbox corner): 0 = rigid, 1 = released |
+| 4-5 | Additional releases (axial/shear, rarely used) |
+| 6 | Constant `1` |
+
+Adding a hinge:
+- ❌ Does NOT increment line 4 counters
+- ❌ Does NOT change block size (still 16 lines)
+- ✅ Only toggles 1 bit in the flags line
+
+Example (experimentally validated):
+- No hinge: `0 0 0 0 0 1`
+- Hinge at start (endpoint A): `0 1 0 0 0 1`
+- Hinge at end (endpoint B): `0 0 1 0 0 1` (expected)
+- Hinges at both: `0 1 1 0 0 1` (expected)
 
 ## Support encoding
 
