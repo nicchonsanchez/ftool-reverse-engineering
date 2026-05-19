@@ -56,11 +56,15 @@ Line 19: "0"
 Line 20: [count_concentrated_loads]                     # nodal load count
 Line 21: "'name' Fx Fy Mz"                              # repeat N times
          Ex: "'F' 0 -10 0" = 10 kN downward, no moment
-Line 22: "0"
-Line 23: [count_uniform_loads]                          # uniform bar loads count
-Line 24: "[flag] 'name' Qx Qy"                          # repeat N times
-         Ex: "0 'Gravity' 0 -1" = -1 kN/m vertical
-Lines 25-26: "0" "0" (slots for linear and thermal loads, usually 0)
+Line after nodal: "0" (separator)
+Next: [count_uniform_loads]
+Lines: "[flag] 'name' Qx Qy"                            # 4 values
+        Ex: "0 'Gravity' 0 -1" = -1 kN/m vertical
+Line after uniform: "0" (separator)
+Next: [count_linear_loads]
+Lines: "[flag] 'name' Pxi Pyi Pxj Pyj"                  # 6 values (validated exp-H)
+        Ex: "0 'Trapezoidal' 0 0 0 -5" = ramp 0 to -5 kN/m
+Lines after: "0" "0" "0"... (slots for Member End Moments, Thermal, etc.)
 ```
 
 ## Materials (lines 26-28)
@@ -131,12 +135,12 @@ Pos | Example line                                 | Content
 05  | "+xmin +xmax +ymin +ymax"                    | bbox enveloping BOTH endpoints
     |                                              | Other endpoint = opposite bbox corner
 06  | "[res] [hingeA] [hingeB] 0 0 1"              | flags incl. HINGES (see table below)
-07  | "0" or "1"                                   | = 1 if MATERIAL applied
+07  | "0" or ID                                    | MATERIAL ID applied (0 = none)
 08  | "0" or ID                                    | SECTION ID applied (0 = none)
-09  | "0"                                          | constant
+09  | "0" or ID                                    | **MEMBER END MOMENT ID applied** (0 = none) — validated exp-I
 10  | "0" or ID                                    | UNIFORM LOAD ID applied (0 = none)
-11  | "0"                                          | constant
-12  | "0"                                          | constant
+11  | "0" or ID                                    | **LINEAR LOAD ID applied** (0 = none) — validated exp-H
+12  | "0"                                          | likely Thermal Load ID (not yet validated)
 13  | "[result_ref] Fx Fy Mz +float"               | SUPPORT at endpoint A
 14  | "0 0 0"                                      |
 15  | "0" or ID                                    | NODAL LOAD ID at endpoint A
@@ -190,10 +194,12 @@ Position 6 of `2 1 ...` block (flags line, 6 values):
 | Pos | Meaning |
 |-----|---------|
 | 1 | Result flag (becomes `1` after Solve) |
-| **2** | **Hinge at endpoint A (block's coord)**: 0 = rigid, 1 = released |
-| 3 | Hinge at endpoint B (opposite bbox corner): 0 = rigid, 1 = released |
+| **2** | **Hinge at INITIAL node (Ma)** = endpoint OPPOSITE to block's coord: 0 = rigid, 1 = released |
+| **3** | **Hinge at END node (Mb)** = endpoint AT block's coord: 0 = rigid, 1 = released |
 | 4-5 | Additional releases (axial/shear, rarely used) |
 | 6 | Constant `1` |
+
+⚠️ **Important**: the `coord` stored in pos 3 of the block is the **end node (Mb)**, NOT the initial node (Ma). Ma is the bbox-opposite corner. Order is defined by click order when creating the bar (first click = Ma, second click = Mb = coord).
 
 Adding a hinge:
 - ❌ Does NOT increment line 4 counters
@@ -202,8 +208,8 @@ Adding a hinge:
 
 Example (experimentally validated):
 - No hinge: `0 0 0 0 0 1`
-- Hinge at start (endpoint A): `0 1 0 0 0 1`
-- Hinge at end (endpoint B): `0 0 1 0 0 1` (expected)
+- Hinge at Ma only (start): `0 1 0 0 0 1` ✓ validated
+- Hinge at Mb only (end): `0 0 1 0 0 1` ✓ validated
 - Hinges at both: `0 1 1 0 0 1` (expected)
 
 ## Support encoding

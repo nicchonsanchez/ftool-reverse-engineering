@@ -56,11 +56,15 @@ Linha 19: "0"
 Linha 20: [count_cargas_pontuais]                        # número de cargas nodais
 Linha 21: "'nome' Fx Fy Mz"                              # repete N vezes pra N cargas
           Ex: "'F' 0 -10 0" = carga 10 kN pra baixo, sem momento
-Linha 22: "0"
-Linha 23: [count_cargas_uniformes]                       # número de cargas uniformes em barras
-Linha 24: "[flag] 'nome' Qx Qy"                          # repete N vezes
-          Ex: "0 'Gravidade' 0 -1" = -1 kN/m vertical
-Linhas 25-26: "0" "0" (slots pra cargas lineares e térmicas, geralmente 0)
+Linha após nodal: "0" (separador)
+Próxima: [count_uniform]
+Linhas: "[flag] 'nome' Qx Qy"                            # 4 valores
+        Ex: "0 'Gravidade' 0 -1" = -1 kN/m vertical
+Linha após uniform: "0" (separador)
+Próxima: [count_linear]
+Linhas: "[flag] 'nome' Pxi Pyi Pxj Pyj"                  # 6 valores (validado exp-H)
+        Ex: "0 'Trapezoidal' 0 0 0 -5" = ramp de 0 a -5 kN/m
+Linhas seguintes: "0" "0" "0"... (slots pra Member End Moments, Thermal, etc.)
 ```
 
 ## Materiais (linhas 26-28)
@@ -132,12 +136,12 @@ Pos | Linha exemplo                                | Conteúdo
 05  | "+xmin +xmax +ymin +ymax"                    | bbox que envelopa AMBAS pontas
     |                                              | A outra ponta = canto do bbox oposto à coord
 06  | "[res] [hingeA] [hingeB] 0 0 1"              | flags incl. RÓTULAS (ver tabela abaixo)
-07  | "0" ou "1"                                   | = 1 se barra tem MATERIAL aplicado
+07  | "0" ou ID                                    | ID do MATERIAL aplicado (0 = nenhuma)
 08  | "0" ou ID                                    | ID da SEÇÃO aplicada (0 = nenhuma)
-09  | "0"                                          | constante
+09  | "0" ou ID                                    | **ID do MEMBER END MOMENT aplicado** (0 = nenhuma) — validado exp-I
 10  | "0" ou ID                                    | ID da CARGA UNIFORME aplicada (0 = nenhuma)
-11  | "0"                                          | constante
-12  | "0"                                          | constante
+11  | "0" ou ID                                    | **ID da CARGA LINEAR aplicada** (0 = nenhuma) — validado exp-H
+12  | "0"                                          | provável: Thermal Load ID (não validado)
 13  | "[result_ref] Fx Fy Mz +float"               | APOIO no endpoint A
 14  | "0 0 0"                                      |
 15  | "0" ou ID                                    | ID da CARGA NODAL no endpoint A (0 = nenhuma)
@@ -191,10 +195,12 @@ Posição 6 do bloco `2 1 ...` (linha de flags, 6 valores):
 | Pos | Significado |
 |-----|-------------|
 | 1 | Result flag (vira `1` após Solve) |
-| **2** | **Rótula no endpoint A (coord do bloco)**: 0 = rígido, 1 = articulado |
-| 3 | Rótula no endpoint B (canto oposto do bbox): 0 = rígido, 1 = articulado |
+| **2** | **Rótula no nó INICIAL (Ma)** = endpoint OPOSTO ao coord do bloco: 0 = rígido, 1 = articulado |
+| **3** | **Rótula no nó FINAL (Mb)** = endpoint AT coord do bloco: 0 = rígido, 1 = articulado |
 | 4-5 | Releases adicionais (axial/shear, raramente usado) |
 | 6 | Constante `1` |
+
+⚠️ **Importante**: o `coord` armazenado na pos 3 do bloco é o **end node (Mb)**, NÃO o initial node (Ma). O Ma é o canto bbox-oposto ao coord. A ordem é definida pela ordem de clique ao criar a barra (primeiro clique = Ma, segundo clique = Mb = coord).
 
 Adicionar rótula:
 - ❌ Não incrementa contadores da linha 4
@@ -203,8 +209,8 @@ Adicionar rótula:
 
 Exemplo (validado experimentalmente):
 - Sem rótula: `0 0 0 0 0 1`
-- Rótula no início (endpoint A): `0 1 0 0 0 1`
-- Rótula no fim (endpoint B): `0 0 1 0 0 1` (esperado)
+- Rótula só no Ma (início): `0 1 0 0 0 1` ✓ validado
+- Rótula só no Mb (fim): `0 0 1 0 0 1` ✓ validado
 - Rótula em ambos: `0 1 1 0 0 1` (esperado)
 
 ## Encoding de apoios
