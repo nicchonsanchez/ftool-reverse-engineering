@@ -134,7 +134,9 @@ Linha 28: " E ν ρ α"                                     # 4 floats, com lead
 | Concreto fck=25 MPa | 2.8e+007 | 0.2 | 25 | 1e-005 |
 | Madeira (genérico) | 7.35e+006 | 0.3 | 10 | 1e-005 |
 
-## Seções (linhas 29-34)
+## Seções
+
+### Formato Generic / Parameterized (recomendado pra gerar)
 
 ```
 Linha 29: [count_secoes]                                 # ex: "1"
@@ -146,6 +148,25 @@ Linha 31: " A As I _ d ȳ"                                # 6 floats — formato
 ```
 
 **Recomendação**: use sempre **Generic Integral Properties** (6 floats) — é mais explícito e fácil de gerar.
+
+### Formato Profile Tables (Vallourec, Gerdau, AISC, Mills, etc.) — NÃO recomendado pra geração
+
+Profile Tables têm encoding completamente diferente — usam **referências numéricas a catálogo interno do FTool** em vez de propriedades físicas:
+
+```
+'nome_secao' [tabela_id] [subtipo_id]    ← ex: 'VallourecTubo' 17 0
+ [catalog_index] [param1] [param2]        ← ex: 9 0 0
+```
+
+Validado em exp-Z: criar uma seção Vallourec tubo circular d=33mm t=3mm gerou:
+```
+'VallourecTubo' 17 0
+ 9 0 0
+```
+
+**Problema crítico:** os números (`17`, `0`, `9`) são índices **internos do FTool**, não documentados publicamente. Sem conhecer o mapping interno do FTool pra cada tabela e cada produto, **NÃO É POSSÍVEL gerar Profile Tables programaticamente**.
+
+**Workaround:** sempre use **Generic Integral Properties** com A e I do catálogo do fabricante. O modelo estrutural fica idêntico — só perde o "label" visual do perfil no painel.
 
 ## Stub do nó da ORIGEM (linhas 35-40)
 

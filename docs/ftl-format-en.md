@@ -134,7 +134,9 @@ Line 28: " E ν ρ α"                                     # 4 floats, leading s
 | Concrete fck=25 MPa | 2.8e+007 | 0.2 | 25 | 1e-005 |
 | Wood (generic) | 7.35e+006 | 0.3 | 10 | 1e-005 |
 
-## Sections (lines 29-34)
+## Sections
+
+### Generic / Parameterized format (recommended for generation)
 
 ```
 Line 29: [count_sections]                               # ex: "1"
@@ -146,6 +148,25 @@ Line 31: " A As I _ d ȳ"                                # 6 floats — Generic 
 ```
 
 **Recommendation**: always use **Generic Integral Properties** (6 floats) — most explicit, easiest to generate.
+
+### Profile Tables format (Vallourec, Gerdau, AISC, Mills, etc.) — NOT recommended for generation
+
+Profile Tables have a completely different encoding — they use **numeric references to FTool's internal catalog** instead of physical properties:
+
+```
+'section_name' [table_id] [subtype_id]   ← e.g.: 'VallourecTubo' 17 0
+ [catalog_index] [param1] [param2]        ← e.g.: 9 0 0
+```
+
+Validated in exp-Z: creating a Vallourec circular tube d=33mm t=3mm generated:
+```
+'VallourecTubo' 17 0
+ 9 0 0
+```
+
+**Critical problem:** the numbers (`17`, `0`, `9`) are **FTool internal indexes**, undocumented. Without knowing FTool's internal mapping for each table and product, **it is NOT POSSIBLE to generate Profile Tables programmatically**.
+
+**Workaround:** always use **Generic Integral Properties** with A and I from the manufacturer's catalog. The structural model is identical — only loses the visual "label" of the profile in the panel.
 
 ## ORIGIN node stub (lines 35-40)
 
