@@ -36,7 +36,8 @@ Linha 6:  "+xmin +xmax +ymin +ymax"                      # viewport bbox
           Se vazio: ±1e30 em todos os 4
 Linha 7:  "0.01 0.01"                                    # escala/zoom (típico)
 Linha 8:  "1 0 1 0 1 1 1 0 0 0 1 1 0 0 0"                # display flags
-Linhas 9-13: blocos constantes (counters internos, deixar igual)
+Linha 9:  "[step] 0"                                     # Step do topo da tela em metros (validado exp-X10)
+Linhas 10-13: blocos constantes (counters internos, deixar igual)
 Linha 14: "1 1"
 Linha 15: "0 1 1 1 1 0"
 Linha 16: "1 1 0"

@@ -36,7 +36,8 @@ Line 6:  "+xmin +xmax +ymin +ymax"                      # viewport bbox
          Empty: ±1e30 on all 4
 Line 7:  "0.01 0.01"                                    # scale/zoom (typical)
 Line 8:  "1 0 1 0 1 1 1 0 0 0 1 1 0 0 0"                # display flags
-Lines 9-13: constant blocks (internal counters, leave as-is)
+Line 9:  "[step] 0"                                     # Step field from top toolbar in meters (validated exp-X10)
+Lines 10-13: constant blocks (internal counters, leave as-is)
 Line 14: "1 1"
 Line 15: "0 1 1 1 1 0"
 Line 16: "1 1 0"
