@@ -1,0 +1,235 @@
+# FTool 4.01.00 `.ftl` Format — Decoded
+
+Technical documentation of the `.ftl` file format used by [FTool](https://www.tecgraf.puc-rio.br/ftool/) version 4.01.00 (PUC-Rio).
+
+Plain text, space-separated. **Not binary**, but has cross-referenced IDs, pre-computed bboxes, and undocumented flags.
+
+---
+
+## Macro structure
+
+```
+Lines 1-16:      Header (version, viewport, counters, display flags)
+Lines 17-18:     Load case
+Lines 19-25:    Concentrated nodal loads + uniform bar loads
+Lines 26-28:    Materials
+Lines 29-34:    Sections
+Lines 35-40:    Entity "stub" — support/load on ORIGIN NODE (0,0)
+Line 41+:       Entities (bars) — 16-line block each (or 12 for "connectors")
+Final line:     " 0" (terminator, with leading space)
+```
+
+## Header (lines 1-16)
+
+Copy from a known-good file. Most lines are constant.
+
+```
+Line 1:  "401 0"                                       # version + flag (constant)
+Line 2:  "206"                                          # constant
+Line 3:  "1"                                            # constant
+Line 4:  "0 1 [matMax] [secMax] [nodeMax] [counter1] [counter2] 0 0 0 0"
+         counter1 and counter2 increment per created entity (global watermarks).
+         counter2 = next available entity ID.
+Line 5:  "+X_cursor +Y_cursor"                          # cursor/center position
+         Empty model: ±1e30 (sentinel "viewport not initialized")
+Line 6:  "+xmin +xmax +ymin +ymax"                      # viewport bbox
+         Empty: ±1e30 on all 4
+Line 7:  "0.01 0.01"                                    # scale/zoom (typical)
+Line 8:  "1 0 1 0 1 1 1 0 0 0 1 1 0 0 0"                # display flags
+Lines 9-13: constant blocks (internal counters, leave as-is)
+Line 14: "1 1"
+Line 15: "0 1 1 1 1 0"
+Line 16: "1 1 0"
+```
+
+## Load case (lines 17-18)
+
+```
+Line 17: "1"                                            # number of load cases
+Line 18: "'Load Case 01' 1"                             # 'name' [flag]
+```
+
+## Loads (lines 19-25)
+
+```
+Line 19: "0"
+Line 20: [count_concentrated_loads]                     # nodal load count
+Line 21: "'name' Fx Fy Mz"                              # repeat N times
+         Ex: "'F' 0 -10 0" = 10 kN downward, no moment
+Line 22: "0"
+Line 23: [count_uniform_loads]                          # uniform bar loads count
+Line 24: "[flag] 'name' Qx Qy"                          # repeat N times
+         Ex: "0 'Gravity' 0 -1" = -1 kN/m vertical
+Lines 25-26: "0" "0" (slots for linear and thermal loads, usually 0)
+```
+
+## Materials (lines 26-28)
+
+```
+Line 26: [count_materials]                              # ex: "1"
+Line 27: "'name' [flag]"                                # ex: "'A36 Steel' 0"
+Line 28: " E ν ρ α"                                     # 4 floats, leading space
+```
+
+**Common materials:**
+
+| Material | E (kN/m²) | ν | ρ | α |
+|----------|-----------|---|---|---|
+| ASTM A36 Steel | 2e+008 | 0.3 | 78.5 | 1.2e-005 |
+| Concrete fck=25 MPa | 2.8e+007 | 0.2 | 25 | 1e-005 |
+| Wood (generic) | 7.35e+006 | 0.3 | 10 | 1e-005 |
+
+## Sections (lines 29-34)
+
+```
+Line 29: [count_sections]                               # ex: "1"
+Line 30: "'name' [flag1] [flag2]"                       # ex: "'Tube 100x50x3' 0 0"
+Line 31: " A I"                                         # 2 floats — simple Rectangle
+or
+Line 31: " A As I _ d ȳ"                                # 6 floats — Generic (Integral Properties) [recommended]
+         Ex: " 0.000864 0 1.12e-006 0 0.1 0"           # 100x50x3 tube
+```
+
+**Recommendation**: always use **Generic Integral Properties** (6 floats) — most explicit, easiest to generate.
+
+## ORIGIN node stub (lines 35-40)
+
+The origin (0, 0) is special: 6 reserved lines that store its support and load.
+
+```
+Line 35: "0"
+Line 36: "0"
+Line 37: "[results_flag] Fx Fy Mz +float"               # SUPPORT + LOAD AT ORIGIN
+         No support:      "0 0 0 0 +0.00000000e+000"
+         Roller (Y fix):  "0 0 1 0 +0.00000000e+000"
+         Pinned (X+Y):    "0 1 1 0 +0.00000000e+000"
+         Fixed (X+Y+Z):   "0 1 1 1 +0.00000000e+000"
+         After analysis:  "1 X X X +0" (pos 1 = result_flag = 1)
+Line 38: "0 0 0"
+Line 39: "0"
+Line 40: "0 0 0 0"
+```
+
+## Entities (bars)
+
+### Critical rule: two block types
+
+| Type | When | Size |
+|------|------|------|
+| **`2 1 ...`** ("creator") | Bar that CREATES at least 1 new node (endpoint A is the new one) | **16 lines** |
+| **`4 1 ...`** ("connector") | Bar between 2 existing nodes (no new nodes) | **12 lines** |
+
+### `2 1 ...` block — Creator (16 lines)
+
+```
+Pos | Example line                                 | Content
+----|----------------------------------------------|----------
+01  | "1"                                          | entity start marker
+02  | "2 1 [intCounters] 1 [ID]"                   | header (11 ints)
+03  | "+X +Y"                                      | ONE endpoint coordinate (endpoint A)
+04  | "0"                                          | constant
+05  | "+xmin +xmax +ymin +ymax"                    | bbox enveloping BOTH endpoints
+    |                                              | Other endpoint = opposite bbox corner
+06  | "[result_flag] 0 0 0 0 1"                    | flags + post-analysis result ref
+07  | "0" or "1"                                   | = 1 if MATERIAL applied
+08  | "0" or ID                                    | SECTION ID applied (0 = none)
+09  | "0"                                          | constant
+10  | "0" or ID                                    | UNIFORM LOAD ID applied (0 = none)
+11  | "0"                                          | constant
+12  | "0"                                          | constant
+13  | "[result_ref] Fx Fy Mz +float"               | SUPPORT at endpoint A
+14  | "0 0 0"                                      |
+15  | "0" or ID                                    | NODAL LOAD ID at endpoint A
+16  | "0 0 0 0"                                    |
+```
+
+### `4 1 ...` block — Connector (12 lines)
+
+```
+Pos | Example line                                 | Content
+----|----------------------------------------------|----------
+01  | "1"                                          | marker
+02  | "4 1 [internal refs] 1 [ID]"                 | header (11 ints, different format)
+03  | "+xmin +xmax +ymin +ymax"                    | MODEL-wide bbox (not this entity's)
+04  | "0"                                          | constant
+05  | "+xmin +xmax +ymin +ymax"                    | this entity's bbox
+06  | "[result_flag] 0 0 0 0 1"                    |
+07  | "0" or "1"                                   | material applied
+08  | "0" or ID                                    | section
+09  | "0"                                          |
+10  | "0" or ID                                    | uniform load
+11  | "0"                                          |
+12  | "0"                                          |
+```
+
+**Why 12 lines?** Connectors don't "own" any node — so no slots for support (pos 13), nodal load (pos 15), or endpoint A coord (pos 3). Material and section remain because they belong to the BAR.
+
+## Implicit topology (MASTER rule)
+
+**FTool does NOT store nodes as separate entities.** Instead:
+
+- Each bar has 2 implicit endpoints: the coord (pos 3 of `2 1` block) + opposite bbox corner
+- Two bars with matching endpoints (1 mm tolerance) → same node
+- Topology is **derived** at file open, not stored
+
+**Where each node's data lives:**
+- Origin (0,0) node: line 37 of the stub
+- Endpoint A of a `2 1` bar: pos 13 (support) and pos 15 (load) of the block
+- Shared endpoint B: inherits from the bar that created it as endpoint A
+
+**Implication for generation:**
+Bar creation ORDER defines which bar "owns" each node's slot. Plan:
+1. Define bar creation order
+2. First endpoint you create becomes endpoint A (slot owner) of that bar
+3. Subsequent bars touching that node use `4 1` (connector) block
+
+## Support encoding
+
+Position 13 of `2 1` block (endpoint A support line) or line 37 (origin):
+
+| Type | Encoding | Δx | Δy | θz |
+|------|----------|----|----|-----|
+| No support | `0 0 0 0` | free | free | free |
+| Roller in Y | `0 0 1 0` | free | **fix** | free |
+| Roller in X | `0 1 0 0` | **fix** | free | free |
+| Pinned | `0 1 1 0` | **fix** | **fix** | free |
+| Fixed | `0 1 1 1` | **fix** | **fix** | **fix** |
+
+Position 1 (`0` or `1`) is FTool's internal flag, used post-analysis — generate as `0`.
+
+## Analysis results
+
+The `.ftl` does **NOT store results** (moments, reactions, deformations). Recomputed at runtime when file opens.
+
+After Solve, what changes:
+- Line 37 pos 1: 0 → 1 (flag "model analyzed")
+- Line 6 and line 13 of each block, pos 1: 0 → N (internal indices)
+
+These are **internal indices** — not result data. Can be zeroed to force recomputation.
+
+## Valid generation flow (from-scratch `.ftl`)
+
+1. Header copied from known-good file (Pratt, or one from `examples/`)
+2. Define loads (lines 19-25) BEFORE entities
+3. Define material(s) (lines 26-28)
+4. Define section(s) (lines 29-34) — prefer Generic (6 floats)
+5. Origin stub (lines 35-40): zeroed or with support if origin is fixed
+6. For each bar:
+   - Decide: creates new node (`2 1`, 16 lines) or connects existing (`4 1`, 12 lines)
+   - Compute bbox = (min/max x, min/max y of 2 endpoints)
+   - Pos 7 = 1 if material applied
+   - Pos 8 = section ID (1 = first section defined)
+   - Pos 10 = uniform load ID if applied
+   - Pos 13 = support at endpoint A
+   - Pos 15 = nodal load at endpoint A
+7. Update counters (line 4): pos 6 and 7 = max created IDs
+8. Final line: ` 0` with leading space
+
+## Common errors
+
+- ❌ Creating isolated "node entities" — FTool discards. There's no standalone node entity.
+- ❌ Degenerate bboxes — OK for axis-aligned bars (ymin=ymax horizontal, xmin=xmax vertical). NOT OK for oblique.
+- ❌ Confusing "elastic support" entity (`±1e30` values) with a member
+- ❌ Not assigning material/section (pos 7/8 = 0) → "You must define materials to all members" error
+- ❌ Mixing `2 1` and `4 1` formats arbitrarily — follow the "creator vs connector" rule
+- ❌ Non-ASCII chars in names (ç, ã) may cause save/load issues on some systems

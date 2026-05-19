@@ -1,0 +1,236 @@
+# Formato `.ftl` do FTool 4.01.00 — Decodificação
+
+Documentação técnica do formato de arquivo `.ftl` usado pelo [FTool](https://www.tecgraf.puc-rio.br/ftool/) versão 4.01.00 (PUC-Rio).
+
+Texto plano, separação por espaço. **Não é binário**, mas tem IDs cruzados, bboxes pré-calculados e flags não-documentados publicamente.
+
+---
+
+## Estrutura macro
+
+```
+Linhas 1-16:     Cabeçalho (versão, viewport, contadores, display flags)
+Linhas 17-18:    Load case (caso de carregamento)
+Linhas 19-25:    Cargas pontuais nodais + cargas uniformes em barras
+Linhas 26-28:    Materiais
+Linhas 29-34:    Seções
+Linhas 35-40:    "Stub" da entidade — apoio/carga no NÓ DA ORIGEM (0,0)
+Linha 41+:       Entidades (barras) — bloco de 16 linhas cada (ou 12 pra "conectores")
+Linha final:     " 0" (terminador, com espaço inicial)
+```
+
+## Cabeçalho (linhas 1-16)
+
+Copie de um arquivo conhecido bom. Maioria das linhas é constante.
+
+```
+Linha 1:  "401 0"                                        # versão + flag (constante)
+Linha 2:  "206"                                          # constante
+Linha 3:  "1"                                            # constante
+Linha 4:  "0 1 [matMax] [secMax] [nodeMax] [counter1] [counter2] 0 0 0 0"
+          counter1 e counter2 incrementam por entidade criada (marcas d'água globais).
+          counter2 = próximo ID disponível de entidade.
+Linha 5:  "+X_cursor +Y_cursor"                          # posição cursor/centro
+          Se modelo vazio: ±1e30 (sentinela "viewport não inicializado")
+Linha 6:  "+xmin +xmax +ymin +ymax"                      # viewport bbox
+          Se vazio: ±1e30 em todos os 4
+Linha 7:  "0.01 0.01"                                    # escala/zoom (típico)
+Linha 8:  "1 0 1 0 1 1 1 0 0 0 1 1 0 0 0"                # display flags
+Linhas 9-13: blocos constantes (counters internos, deixar igual)
+Linha 14: "1 1"
+Linha 15: "0 1 1 1 1 0"
+Linha 16: "1 1 0"
+```
+
+## Load case (linhas 17-18)
+
+```
+Linha 17: "1"                                            # número de casos de carregamento
+Linha 18: "'Load Case 01' 1"                             # 'nome' [flag]
+```
+
+## Cargas (linhas 19-25)
+
+```
+Linha 19: "0"
+Linha 20: [count_cargas_pontuais]                        # número de cargas nodais
+Linha 21: "'nome' Fx Fy Mz"                              # repete N vezes pra N cargas
+          Ex: "'F' 0 -10 0" = carga 10 kN pra baixo, sem momento
+Linha 22: "0"
+Linha 23: [count_cargas_uniformes]                       # número de cargas uniformes em barras
+Linha 24: "[flag] 'nome' Qx Qy"                          # repete N vezes
+          Ex: "0 'Gravidade' 0 -1" = -1 kN/m vertical
+Linhas 25-26: "0" "0" (slots pra cargas lineares e térmicas, geralmente 0)
+```
+
+## Materiais (linhas 26-28)
+
+```
+Linha 26: [count_materiais]                              # ex: "1"
+Linha 27: "'nome' [flag]"                                # ex: "'Aço A36' 0"
+Linha 28: " E ν ρ α"                                     # 4 floats, com leading space
+```
+
+**Materiais comuns:**
+
+| Material | E (kN/m²) | ν | ρ | α |
+|----------|-----------|---|---|---|
+| Aço ASTM A36 | 2e+008 | 0.3 | 78.5 | 1.2e-005 |
+| Concreto fck=25 MPa | 2.8e+007 | 0.2 | 25 | 1e-005 |
+| Madeira (genérico) | 7.35e+006 | 0.3 | 10 | 1e-005 |
+
+## Seções (linhas 29-34)
+
+```
+Linha 29: [count_secoes]                                 # ex: "1"
+Linha 30: "'nome' [flag1] [flag2]"                       # ex: "'Tubo 100x50x3' 0 0"
+Linha 31: " A I"                                         # 2 floats — formato Rectangle simples
+ou
+Linha 31: " A As I _ d ȳ"                                # 6 floats — formato Generic (Integral Properties) [recomendado]
+          Ex: " 0.000864 0 1.12e-006 0 0.1 0"           # tubo 100x50x3 mm
+```
+
+**Recomendação**: use sempre **Generic Integral Properties** (6 floats) — é mais explícito e fácil de gerar.
+
+## Stub do nó da ORIGEM (linhas 35-40)
+
+A origem (0, 0) é especial: tem 6 linhas reservadas que armazenam seu apoio e carga.
+
+```
+Linha 35: "0"
+Linha 36: "0"
+Linha 37: "[results_flag] Fx Fy Mz +float"               # APOIO + CARGA NA ORIGEM
+          Sem apoio:        "0 0 0 0 +0.00000000e+000"
+          Rolete (Y fixo):  "0 0 1 0 +0.00000000e+000"
+          Articulado (X+Y): "0 1 1 0 +0.00000000e+000"
+          Engaste (X+Y+Z):  "0 1 1 1 +0.00000000e+000"
+          Após análise:     "1 X X X +0" (pos 1 = result_flag = 1)
+Linha 38: "0 0 0"
+Linha 39: "0"
+Linha 40: "0 0 0 0"
+```
+
+## Entidades (barras)
+
+### Regra crítica: dois tipos de bloco
+
+| Tipo | Quando | Tamanho |
+|------|--------|---------|
+| **`2 1 ...`** ("creator") | Barra que CRIA pelo menos 1 nó novo (endpoint A é o novo) | **16 linhas** |
+| **`4 1 ...`** ("connector") | Barra entre 2 nós já existentes (nenhum nó novo) | **12 linhas** |
+
+### Bloco `2 1 ...` — Creator (16 linhas)
+
+```
+Pos | Linha exemplo                                | Conteúdo
+----|----------------------------------------------|----------
+01  | "1"                                          | marker início entidade
+02  | "2 1 [intCnt1] [intCnt1] [intCnt2] [intCnt3] [intCnt3] [intCnt4] [intCnt3] 1 [ID]"
+    |                                              | header (11 ints)
+03  | "+X +Y"                                      | coordenada de UMA das pontas (endpoint A)
+04  | "0"                                          | constante
+05  | "+xmin +xmax +ymin +ymax"                    | bbox que envelopa AMBAS pontas
+    |                                              | A outra ponta = canto do bbox oposto à coord
+06  | "[result_flag] 0 0 0 0 1"                    | flags + result ref após análise
+07  | "0" ou "1"                                   | = 1 se barra tem MATERIAL aplicado
+08  | "0" ou ID                                    | ID da SEÇÃO aplicada (0 = nenhuma)
+09  | "0"                                          | constante
+10  | "0" ou ID                                    | ID da CARGA UNIFORME aplicada (0 = nenhuma)
+11  | "0"                                          | constante
+12  | "0"                                          | constante
+13  | "[result_ref] Fx Fy Mz +float"               | APOIO no endpoint A
+14  | "0 0 0"                                      |
+15  | "0" ou ID                                    | ID da CARGA NODAL no endpoint A (0 = nenhuma)
+16  | "0 0 0 0"                                    |
+```
+
+### Bloco `4 1 ...` — Connector (12 linhas)
+
+```
+Pos | Linha exemplo                                | Conteúdo
+----|----------------------------------------------|----------
+01  | "1"                                          | marker
+02  | "4 1 [refs internos] 1 [ID]"                 | header (11 ints, formato diferente)
+03  | "+xmin +xmax +ymin +ymax"                    | bbox geral do MODELO (não desta entidade)
+04  | "0"                                          | constante
+05  | "+xmin +xmax +ymin +ymax"                    | bbox desta entidade
+06  | "[result_flag] 0 0 0 0 1"                    |
+07  | "0" ou "1"                                   | material aplicado
+08  | "0" ou ID                                    | seção
+09  | "0"                                          |
+10  | "0" ou ID                                    | carga uniforme
+11  | "0"                                          |
+12  | "0"                                          |
+```
+
+**Por que 12 linhas?** Porque conector não "possui" nenhum nó — então não tem slots pra apoio (pos 13) nem carga nodal (pos 15) nem coord de endpoint A (pos 3). Material e seção continuam porque pertencem à BARRA.
+
+## Topologia implícita (regra MASTER)
+
+**FTool NÃO armazena nós como entidades separadas.** Em vez disso:
+
+- Cada barra tem 2 endpoints implícitos: a coord (pos 3 do bloco `2 1`) + canto oposto do bbox
+- 2 barras com endpoints iguais (tolerance 1 mm) → mesmo nó
+- A topologia é **derivada** ao abrir, não armazenada
+
+**Onde os dados de cada nó moram:**
+- Nó na origem (0,0): linha 37 do stub
+- Nó endpoint A de uma barra `2 1`: pos 13 (apoio) e pos 15 (carga) do bloco
+- Nó endpoint B compartilhado: herda da barra que o criou como endpoint A
+
+**Implicação pra gerar do zero:**
+A ordem de criação das barras define qual barra "possui" o slot de cada nó. Planeje:
+1. Defina a ordem de criação das barras
+2. O 1º endpoint que você cria vira endpoint A (slot owner) daquela barra
+3. Barras subsequentes que tocam esse nó usam bloco `4 1` (connector)
+
+## Encoding de apoios
+
+Posição 13 do bloco `2 1` (linha de apoio do endpoint A) ou linha 37 (origem):
+
+| Tipo | Encoding | Δx | Δy | θz |
+|------|----------|----|----|-----|
+| Sem apoio | `0 0 0 0` | livre | livre | livre |
+| Rolete em Y | `0 0 1 0` | livre | **fixo** | livre |
+| Rolete em X | `0 1 0 0` | **fixo** | livre | livre |
+| Articulado | `0 1 1 0` | **fixo** | **fixo** | livre |
+| Engaste | `0 1 1 1` | **fixo** | **fixo** | **fixo** |
+
+Posição 1 (`0` ou `1`) é flag interno do FTool, usado após análise — gerar como `0`.
+
+## Resultados de análise
+
+O `.ftl` **NÃO armazena os resultados** (momentos, reações, deformadas). São recalculados em runtime ao abrir o arquivo.
+
+Após Solve, mudam:
+- Linha 37 pos 1: 0 → 1 (flag "modelo analisado")
+- Linha 6 e linha 13 de cada bloco, pos 1: 0 → N (índices internos)
+
+Esses são **índices internos** — não dados de resultado. Podem ser zerados pra forçar recálculo.
+
+## Fluxo de geração válido (gerar `.ftl` do zero)
+
+1. Cabeçalho copiado de arquivo bom (Pratt, ou exemplo do `examples/`)
+2. Definir cargas (linhas 19-25) ANTES das entidades
+3. Definir material(s) (linhas 26-28)
+4. Definir seção(ões) (linhas 29-34) — preferir Generic (6 floats)
+5. Stub origem (linhas 35-40): zerado ou com apoio se origem é engastada
+6. Pra cada barra:
+   - Decida: cria nó novo (`2 1`, 16 linhas) ou conecta existentes (`4 1`, 12 linhas)
+   - Calcule bbox = (min/max x, min/max y das 2 pontas)
+   - Pos 7 = 1 se material aplicado
+   - Pos 8 = ID da seção (1 = primeira seção definida)
+   - Pos 10 = ID da carga uniforme se aplicada
+   - Pos 13 = apoio no endpoint A
+   - Pos 15 = carga nodal no endpoint A
+7. Atualizar contadores (linha 4): pos 6 e 7 = max ID criado
+8. Linha final: ` 0` com espaço inicial
+
+## Erros comuns
+
+- ❌ Criar "entidades nó" isoladas — FTool descarta. Não existe entidade nó solo.
+- ❌ Bboxes degenerados — Ok pra barras axis-aligned (ymin=ymax pra horizontal, xmin=xmax pra vertical). NÃO ok pra oblíquas.
+- ❌ Confundir entidade "apoio elástico" (valores `±1e30`) com membro
+- ❌ Não atribuir material/seção (pos 7/8 = 0) → erro "You must define materials to all members"
+- ❌ Misturar formatos `2 1` e `4 1` arbitrariamente — siga a regra de "creator vs connector"
+- ❌ Caracteres não-ASCII em nomes (ç, ã) podem causar problemas no save/load em alguns sistemas
