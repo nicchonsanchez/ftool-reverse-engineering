@@ -146,8 +146,9 @@ Pos | Linha exemplo                                | Conteúdo
 10  | "0" ou ID                                    | ID da CARGA UNIFORME aplicada (0 = nenhuma)
 11  | "0" ou ID                                    | **ID da CARGA LINEAR aplicada** (0 = nenhuma) — validado exp-H
 12  | "0" ou ID                                    | **ID do THERMAL LOAD aplicado** (0 = nenhuma) — validado exp-J
-13  | "[result_ref] Fx Fy Mz +float"               | APOIO no endpoint A
-14  | "0 0 0"                                      |
+13  | "[res] X_state Y_state Z_state +float"       | **APOIO no endpoint Mb (coord)**. States: 0=free, 1=fix, 2=spring (validado exp-T)
+14  | "Kx Ky Kz"                                   | **Rigidezes das molas elásticas** (kN/m, kN/m, kNm/rad)
+    |                                              | Só não-zero se respectivo state da linha 13 = 2
 15  | "0" ou ID                                    | ID da CARGA NODAL no endpoint A (0 = nenhuma)
 16  | "0 0 0 0"                                    |
 ```
@@ -219,17 +220,39 @@ Exemplo (validado experimentalmente):
 
 ## Encoding de apoios
 
-Posição 13 do bloco `2 1` (linha de apoio do endpoint A) ou linha 37 (origem):
+Posição 13 do bloco `2 1` (linha de apoio do endpoint Mb) ou linha 37 (origem):
 
-| Tipo | Encoding | Δx | Δy | θz |
-|------|----------|----|----|-----|
-| Sem apoio | `0 0 0 0` | livre | livre | livre |
-| Rolete em Y | `0 0 1 0` | livre | **fixo** | livre |
-| Rolete em X | `0 1 0 0` | **fixo** | livre | livre |
-| Articulado | `0 1 1 0` | **fixo** | **fixo** | livre |
-| Engaste | `0 1 1 1` | **fixo** | **fixo** | **fixo** |
+Estrutura: `[result_flag] X_state Y_state Z_state [prescribed_value]`
 
-Posição 1 (`0` ou `1`) é flag interno do FTool, usado após análise — gerar como `0`.
+**Cada DOF tem 3 estados possíveis:**
+
+| Valor | Significado |
+|-------|-------------|
+| 0 | Free (livre) |
+| 1 | Fix (restringido completamente) |
+| 2 | Spring (mola elástica) |
+
+**Combinações típicas:**
+
+| Tipo | Encoding (X Y Z) | Δx | Δy | θz |
+|------|------------------|----|----|-----|
+| Sem apoio | `0 0 0` | livre | livre | livre |
+| Rolete em Y | `0 1 0` | livre | **fixo** | livre |
+| Articulado | `1 1 0` | **fixo** | **fixo** | livre |
+| Engaste | `1 1 1` | **fixo** | **fixo** | **fixo** |
+| Mola Y | `0 2 0` | livre | **spring** | livre |
+| Mola Z (apoio elástico rotacional) | `0 0 2` | livre | livre | **spring** |
+
+**Quando state = 2 (spring), a próxima linha do bloco (pos 14) carrega os valores Kx Ky Kz**:
+- Kx em kN/m (se X_state = 2)
+- Ky em kN/m (se Y_state = 2)
+- Kz em kNm/rad (se Z_state = 2)
+
+Exemplo: rolete elástico em Y com K=1000 kN/m:
+- Linha de apoio: `0 0 2 0 +0`
+- Linha seguinte: `0 1000 0`
+
+Posição 1 (`0` ou `1`) é flag interno do FTool após análise — gerar sempre como `0`.
 
 ## Resultados de análise
 

@@ -145,8 +145,9 @@ Pos | Example line                                 | Content
 10  | "0" or ID                                    | UNIFORM LOAD ID applied (0 = none)
 11  | "0" or ID                                    | **LINEAR LOAD ID applied** (0 = none) — validated exp-H
 12  | "0" or ID                                    | **THERMAL LOAD ID applied** (0 = none) — validated exp-J
-13  | "[result_ref] Fx Fy Mz +float"               | SUPPORT at endpoint A
-14  | "0 0 0"                                      |
+13  | "[res] X_state Y_state Z_state +float"       | **SUPPORT at endpoint Mb (coord)**. States: 0=free, 1=fix, 2=spring (validated exp-T)
+14  | "Kx Ky Kz"                                   | **Elastic spring stiffnesses** (kN/m, kN/m, kNm/rad)
+    |                                              | Non-zero only if respective state in line 13 = 2
 15  | "0" or ID                                    | NODAL LOAD ID at endpoint A
 16  | "0 0 0 0"                                    |
 ```
@@ -218,17 +219,39 @@ Example (experimentally validated):
 
 ## Support encoding
 
-Position 13 of `2 1` block (endpoint A support line) or line 37 (origin):
+Position 13 of `2 1` block (endpoint Mb support line) or line 37 (origin):
 
-| Type | Encoding | Δx | Δy | θz |
-|------|----------|----|----|-----|
-| No support | `0 0 0 0` | free | free | free |
-| Roller in Y | `0 0 1 0` | free | **fix** | free |
-| Roller in X | `0 1 0 0` | **fix** | free | free |
-| Pinned | `0 1 1 0` | **fix** | **fix** | free |
-| Fixed | `0 1 1 1` | **fix** | **fix** | **fix** |
+Structure: `[result_flag] X_state Y_state Z_state [prescribed_value]`
 
-Position 1 (`0` or `1`) is FTool's internal flag, used post-analysis — generate as `0`.
+**Each DOF has 3 possible states:**
+
+| Value | Meaning |
+|-------|---------|
+| 0 | Free |
+| 1 | Fix (fully restrained) |
+| 2 | Spring (elastic support) |
+
+**Typical combinations:**
+
+| Type | Encoding (X Y Z) | Δx | Δy | θz |
+|------|------------------|----|----|-----|
+| No support | `0 0 0` | free | free | free |
+| Roller Y | `0 1 0` | free | **fix** | free |
+| Pinned | `1 1 0` | **fix** | **fix** | free |
+| Fixed | `1 1 1` | **fix** | **fix** | **fix** |
+| Spring Y | `0 2 0` | free | **spring** | free |
+| Rotational spring | `0 0 2` | free | free | **spring** |
+
+**When state = 2 (spring), the next block line (pos 14) carries the Kx Ky Kz values**:
+- Kx in kN/m (if X_state = 2)
+- Ky in kN/m (if Y_state = 2)
+- Kz in kNm/rad (if Z_state = 2)
+
+Example: elastic roller in Y with K=1000 kN/m:
+- Support line: `0 0 2 0 +0`
+- Next line: `0 1000 0`
+
+Position 1 (`0` or `1`) is FTool's internal post-analysis flag — generate always as `0`.
 
 ## Analysis results
 
