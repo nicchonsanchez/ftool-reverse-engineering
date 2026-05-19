@@ -146,7 +146,7 @@ Pos | Linha exemplo                                | Conteúdo
 10  | "0" ou ID                                    | ID da CARGA UNIFORME aplicada (0 = nenhuma)
 11  | "0" ou ID                                    | **ID da CARGA LINEAR aplicada** (0 = nenhuma) — validado exp-H
 12  | "0" ou ID                                    | **ID do THERMAL LOAD aplicado** (0 = nenhuma) — validado exp-J
-13  | "[res] X_state Y_state Z_state +0"           | **APOIO no endpoint Mb (coord)**. States: 0=free, 1=fix, 2=spring (validado exp-T). 5º float sempre 0.
+13  | "[res] X_state Y_state Z_state ANGLE_DEG"    | **APOIO no endpoint Mb**. States: 0=free, 1=fix, 2=spring (validado exp-T). 5º float = ângulo em **GRAUS** (validado exp-W).
 14  | "Kx Ky Kz"                                   | **Rigidezes das molas elásticas** (kN/m, kN/m, kNm/rad). Só não-zero se respectivo state = 2
 15  | "0" ou ID                                    | NODAL LOAD ID no endpoint Mb (0 = nenhuma)
 16  | "[flag] Dx Dy Rz"                            | **RECALQUE PRESCRITO** (validado exp-U). flag=1 se tem recalque, Dx Dy em METROS, Rz em RAD. Ex: `1 0 -0.01 0` = Dy=-10mm
@@ -224,7 +224,7 @@ Exemplo (validado experimentalmente):
 
 Posição 13 do bloco `2 1` (linha de apoio do endpoint Mb) ou linha 37 (origem):
 
-Estrutura: `[result_flag] X_state Y_state Z_state [prescribed_value]`
+Estrutura: `[result_flag] X_state Y_state Z_state ANGLE_DEG`
 
 **Cada DOF tem 3 estados possíveis:**
 
@@ -253,6 +253,11 @@ Estrutura: `[result_flag] X_state Y_state Z_state [prescribed_value]`
 Exemplo: rolete elástico em Y com K=1000 kN/m:
 - Linha de apoio: `0 0 2 0 +0`
 - Linha seguinte: `0 1000 0`
+
+**Apoio inclinado**: o 5º valor da linha de apoio é o ângulo em **GRAUS** (não radianos!) — positivo no sentido anti-horário.
+
+Exemplo: articulado inclinado em 30°:
+- Linha de apoio: `0 1 1 0 +30` (validado exp-W)
 
 Posição 1 (`0` ou `1`) é flag interno do FTool após análise — gerar sempre como `0`.
 

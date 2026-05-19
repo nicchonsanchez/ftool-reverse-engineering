@@ -145,7 +145,7 @@ Pos | Example line                                 | Content
 10  | "0" or ID                                    | UNIFORM LOAD ID applied (0 = none)
 11  | "0" or ID                                    | **LINEAR LOAD ID applied** (0 = none) — validated exp-H
 12  | "0" or ID                                    | **THERMAL LOAD ID applied** (0 = none) — validated exp-J
-13  | "[res] X_state Y_state Z_state +0"           | **SUPPORT at endpoint Mb (coord)**. States: 0=free, 1=fix, 2=spring (validated exp-T). 5th float always 0.
+13  | "[res] X_state Y_state Z_state ANGLE_DEG"    | **SUPPORT at endpoint Mb**. States: 0=free, 1=fix, 2=spring (validated exp-T). 5th float = angle in **DEGREES** (validated exp-W).
 14  | "Kx Ky Kz"                                   | **Elastic spring stiffnesses** (kN/m, kN/m, kNm/rad). Non-zero only if respective state = 2
 15  | "0" or ID                                    | NODAL LOAD ID at endpoint Mb
 16  | "[flag] Dx Dy Rz"                            | **PRESCRIBED DISPLACEMENT** (validated exp-U). flag=1 if prescribed, Dx Dy in METERS, Rz in RAD. Ex: `1 0 -0.01 0` = Dy=-10mm
@@ -223,7 +223,7 @@ Example (experimentally validated):
 
 Position 13 of `2 1` block (endpoint Mb support line) or line 37 (origin):
 
-Structure: `[result_flag] X_state Y_state Z_state [prescribed_value]`
+Structure: `[result_flag] X_state Y_state Z_state ANGLE_DEG`
 
 **Each DOF has 3 possible states:**
 
@@ -252,6 +252,11 @@ Structure: `[result_flag] X_state Y_state Z_state [prescribed_value]`
 Example: elastic roller in Y with K=1000 kN/m:
 - Support line: `0 0 2 0 +0`
 - Next line: `0 1000 0`
+
+**Inclined support**: the 5th value of the support line is the inclination angle in **DEGREES** (not radians!) — positive counter-clockwise.
+
+Example: pinned support inclined 30°:
+- Support line: `0 1 1 0 +30` (validated exp-W)
 
 Position 1 (`0` or `1`) is FTool's internal post-analysis flag — generate always as `0`.
 
