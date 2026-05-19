@@ -82,10 +82,12 @@ For each train:
   Line: [M = count_distributed_loads]       # number of distributed loads
   M lines: "xa  xb  q'  q"                  # ALWAYS 4 values (q'=q in single mode)
   Line: [live_load_exterior]                # kN/m (validated X4)
-  Line: [live_load_interior]                # kN/m
+  Line: [live_load_interior]                # kN/m (validated X7)
   Line: [length_m]                          # train length (validated X2)
-  Line: [full_empty_flag]                   # 0=single load car, 1=full/empty car (X6)
-  Line: 0                                   # reserved (unknown use)
+  Line: [full_empty_flag]                   # 0=single car, 1=full/empty (X6)
+  Line: 0                                   # separator between trains (always 0)
+After ALL trains:
+  Line: [selected_train_index]              # train selected in dropdown (0-indexed, X8)
   Line: 0                                   # reserved (unknown use)
 ```
 

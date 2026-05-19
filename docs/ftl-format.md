@@ -82,10 +82,12 @@ Pra cada trem:
   Linha: [M = count_distributed_loads]      # número de cargas distribuídas
   M linhas: "xa  xb  q'  q"                 # SEMPRE 4 valores (q'=q se single mode)
   Linha: [live_load_exterior]               # kN/m (validado X4)
-  Linha: [live_load_interior]               # kN/m
+  Linha: [live_load_interior]               # kN/m (validado X7)
   Linha: [length_m]                         # comprimento do trem (validado X2)
-  Linha: [full_empty_flag]                  # 0=single load car, 1=full/empty car (X6)
-  Linha: 0                                  # reservado (uso desconhecido)
+  Linha: [full_empty_flag]                  # 0=single car, 1=full/empty (X6)
+  Linha: 0                                  # separador entre trens (sempre 0)
+Após TODOS os trens:
+  Linha: [selected_train_index]             # train selecionado no dropdown (0-indexed, X8)
   Linha: 0                                  # reservado (uso desconhecido)
 ```
 
